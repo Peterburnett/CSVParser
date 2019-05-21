@@ -100,10 +100,15 @@
 	}
 
 
-    //Main loop for interacting with DB
+   //=============Main loop for interacting with DB=====================
+   
+	//setup vars for use in loop
 	$lineCount = 0;
-	
 	$MasterQuery = "";
+	$Col1Name = "";
+	$Col2Name = "";
+	$Col3Name = "";
+	
 	
     while (! feof($file)){
         //get current line
@@ -120,11 +125,15 @@
                 exit(3);
             }
             
+            $Col1Name = $line[0];
+            $Col2Name = $line[1];
+            $Col3Name = $line[2];
+            
             //SQL statement takes var names from column names, for easier portability
             $sql = "CREATE TABLE users (
-                $line[0] VARCHAR(100) NOT NULL,
-                $line[1] VARCHAR(100) NOT NULL,
-                $line[2] VARCHAR(100) NOT NULL PRIMARY KEY
+                $Col1Name VARCHAR(100) NOT NULL,
+                $Col2Name VARCHAR(100) NOT NULL,
+                $Col3Name VARCHAR(100) NOT NULL PRIMARY KEY
                 )";
                 
             //Execute SQL query
@@ -136,14 +145,41 @@
             }
             //Finally increment linecount
             $lineCount++;
-        } else {
-            //Every other line except 0
-            $firstName = normaliseName($line[0]);
-            $lastName = normaliseName($line[1]);
+            
+        } else if(!$createTable){
+            //Every other line except 0, if we aren't only creating table
+            $validLine = true;
+            $email = "";
+            
+            //Normalise Names
+            $firstName = $conn->real_escape_string(normaliseName($line[0]));
+            $lastName = $conn->real_escape_string(normaliseName($line[1]));
+            
+            //validate email, and confirm valid line
+            if (validateEmail($line[2])){
+                $email = $conn->real_escape_string(strtolower($line[2]));
+            } else {
+                echo "Email Validation Failed at Line $lineCount\n";
+                $validLine = false;
+            }
+            //Check all conditions are met for line insert into DB, then execute query
+            if (!$dryRun && !$createTable && $validLine){
+                $sql = "INSERT INTO users VALUES ('$firstName', '$lastName', '$email')";
+                
+                if (!mysqli_query($conn, $sql)) {
+                    echo "Error inserting line $lineCount " . mysqli_error($conn);
+                    echo "\n";
+                }
+            }
+            $lineCount++;
         }
     }
     
+    echo "All validated/non-duplicate lines added. Exiting";
+    exit(0);
+    
     //https://stackoverflow.com/questions/10143007/php-normalize-a-string
+    //Exact solution found on StackOverflow, no need to reinvent the wheel
     function normaliseName($name) {
         $name = strtolower($name);
         $normalized = array();
@@ -160,8 +196,14 @@
     }
     
     function validateEmail($email){
-        
+        //Pattern found on http://www.regexlib.com
+        $pattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
+        if (preg_match($pattern, $email)){
+            return true;
+        } else {
+            return false;
+        }
     }
 	
-	
+	//TODO: Help Message Text, DB option with validation, Split it up, Line 4 email???, Names need special characters gone, SQL injection attack vulnerable
 ?>
