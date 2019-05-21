@@ -1,11 +1,13 @@
 #!/usr/bin/php
 
 <?php
+//================================OPTION VALIDATION===================================
 	//Construct the input string for the short options
 	$shortOptions = "";
 	$shortOptions .= "u:";
 	$shortOptions .= "p::";
 	$shortOptions .= "h:";
+	$shortOptions .= "d::";
 	
 	//Construct the input string for the long options
 	$longOptions = array(
@@ -20,8 +22,16 @@
 	
 	//Check for help command before parsing command
 	if (isset($options["help"])){
-		echo "HELP TEXT \n";
-		exit(0);		
+		echo "=========HELP TEXT==============\n";
+		echo "Options for the Script:
+--file [csv file name] – Required. this is the name of the CSV to be parsed
+--create_table – this will cause the MySQL users table to be built (and no further action will be taken)
+--dry_run – this will be used with the --file directive in the instance that we want to run the script but not insert into the DB. All other functions will be executed, but the database won't be altered.
+-u – Required. MySQL username
+-p – MySQL password, defaults to blank if not supplied
+-h – Required. MySQL host
+-d – MySQL Database name to create table in, defaults to 'TestUsers' if not supplied\n";
+        exit(0);		
 	}
 	
 	//Short option Validation
@@ -46,6 +56,14 @@
 		exit(1);
 	}
 	
+	if (isset($options["d"])){
+	    $DBName = $options["d"];
+	}	else {
+	    echo $DBName;
+	    echo "No Database name given, using default DB 'TestUsers'\n";
+	    $DBName = "TestUsers";
+	}
+	
 	//Long Option Validation
 	if (isset($options["file"])){
 		$filepath = $options["file"];
@@ -65,13 +83,15 @@
 	} else {
 		$dryRun = false;
 	}
+//=====================END OPTION VALIDATION=======================================================
+
 	
-	$DBName = "TestDB";
-	
+//=====================DATABASE CONNECTION AND DATA IMPORT=========================================
 	//Create connection to DB using supplied credentials, output success or error
 	$conn = new mysqli($host, $user, $pw);
 	if ($conn->connect_error) {
-	    die("Connection failed: " . $conn->connect_error);
+	    echo ("Connection failed: " . $conn->connect_error);
+	    exit(3);
 	}
 	echo "Connected successfully\n";
 	
@@ -98,9 +118,9 @@
 	    echo "Error Selecting DB: " . mysqli_error($conn);
 	    exit(3);
 	}
+//===================END DATABASE CONNECTION AND DATA IMPORT=======================================
 
-
-   //=============Main loop for interacting with DB=====================
+//===================DATABASE INTERACTION LOOP=====================================================
    
 	//setup vars for use in loop
 	$lineCount = 0;
@@ -112,7 +132,12 @@
 	
     while (! feof($file)){
         //get current line
-        $line = (fgetcsv($file));
+        try{
+            $line = (fgetcsv($file));
+        } catch (Exception $e){
+            echo "Error parsing found file as CSV. Exiting \n";
+            exit(2);
+        }
         //if firstline, construct table from headers, only if not a dry-run
         if (($lineCount == 0) && !$dryRun){
             //Drop any existing users table
@@ -125,9 +150,9 @@
                 exit(3);
             }
             
-            $Col1Name = $line[0];
-            $Col2Name = $line[1];
-            $Col3Name = $line[2];
+            $Col1Name = $conn->real_escape_string($line[0]);
+            $Col2Name = $conn->real_escape_string($line[1]);
+            $Col3Name = $conn->real_escape_string($line[2]);
             
             //SQL statement takes var names from column names, for easier portability
             $sql = "CREATE TABLE users (
@@ -150,6 +175,10 @@
             //Every other line except 0, if we aren't only creating table
             $validLine = true;
             $email = "";
+            //Before checking if valid line, check for primary key presence, indicating EOF
+            if ($line[2]== ""){
+                break;
+            }
             
             //Normalise Names
             $firstName = $conn->real_escape_string(normaliseName($line[0]));
@@ -174,9 +203,21 @@
             $lineCount++;
         }
     }
+//===========================END DATABASE INTERACTION LOOP=========================================
     
-    echo "All validated/non-duplicate lines added. Exiting";
-    exit(0);
+//===========================EXITING===============================================================
+    if ($dryRun){
+        echo "All lines validated and formatted. No Data added to database. Exiting\n";
+        exit(0);
+    } else if  ($createTable){
+        echo "Users table has been created, no data inserted to table. Exiting\n";
+        exit(0);
+    } else {
+        echo "All validated/non-duplicate lines added. Exiting\n";
+        exit(0);
+    }
+ 
+//==================================NORMALISATION AND VALIDATING FUNCTIONS=========================
     
     //https://stackoverflow.com/questions/10143007/php-normalize-a-string
     //Exact solution found on StackOverflow, no need to reinvent the wheel
@@ -192,7 +233,9 @@
             $normalized[] = ucfirst($word);
         }
         
-        return implode('', $normalized);
+        $norm = implode('', $normalized);
+        //Strip Special Chars from name
+        return preg_replace("/^[a-z -']+$/", "", $norm);
     }
     
     function validateEmail($email){
@@ -205,5 +248,5 @@
         }
     }
 	
-	//TODO: Help Message Text, DB option with validation, Split it up, Line 4 email???, Names need special characters gone, SQL injection attack vulnerable
+	//TODO:SQL injection attack vulnerable
 ?>

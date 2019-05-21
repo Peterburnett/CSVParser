@@ -1,0 +1,40 @@
+===============================user_upload.php=================================
+  Installation requirements:
+  The only requirement for this script is that the installed PHP version to
+  operate the script on must be atleast PHP7.0, and have the MySQLi library
+  included in the PHP installation.
+
+  The Script is designed for use with MySQL Server 5.6>, higher versions may
+  work but this script is tested and validated on this version.
+
+  This script is operatable as a bash function by access using ./user_upload.php
+  in the same folder, however this may not work depending on the install
+  location of PHP on the system. Changing the first line to match the output of
+  'which php' will regain this functionality.
+
+=============================Errors============================================
+  The Script continues past any errors it can recover from, however some
+  exceptions require the script to stop running. The console will detail any
+  errors that are encountered, but incase of a stop, the script will terminate
+  with error codes that can be used to identify the issue.
+
+  Exit Code 1: Error with supplied data in options, whether insufficient or
+               wrong format
+
+  Exit Code 2: Error with CSV file import, whether wrong location of file,
+               or whether script was unable to parse imported file as a CSV
+
+  Exit Code 3: Error with Database connection. This can come from an issue
+               connecting to the database with incorrect credentials, or from a
+               failed database operation.
+============================Options============================================
+  --create_table – this will cause the MySQL users table to be built
+  (and no further action will be taken)
+  --dry_run – this will be used with the --file directive in the instance
+  that we want to run the script but not insert into the DB. All other
+  functions will be executed, but the database won't be altered.
+  --help – this function displays a help message with all of the available parameters
+  -u – Required. MySQL username
+  -p – MySQL password, defaults to blank if not supplied
+  -h – Required. MySQL host
+  -d – MySQL Database name to create table in, defaults to 'TestUsers' if not supplied\n";
