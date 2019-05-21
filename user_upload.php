@@ -59,7 +59,6 @@
 	if (isset($options["d"])){
 	    $DBName = $options["d"];
 	}	else {
-	    echo $DBName;
 	    echo "No Database name given, using default DB 'TestUsers'\n";
 	    $DBName = "TestUsers";
 	}
@@ -88,9 +87,10 @@
 	
 //=====================DATABASE CONNECTION AND DATA IMPORT=========================================
 	//Create connection to DB using supplied credentials, output success or error
-	$conn = new mysqli($host, $user, $pw);
+	$conn = @new mysqli($host, $user, $pw);
 	if ($conn->connect_error) {
 	    echo ("Connection failed: " . $conn->connect_error);
+	    echo "\nCheck supplied credentials\n";
 	    exit(3);
 	}
 	echo "Connected successfully\n";
@@ -104,6 +104,7 @@
 	}
 	
 	//Create DB for data if it doesn't already exist on the server
+	
 	$DBCreateSQL = "CREATE DATABASE IF NOT EXISTS $DBName;";
 	$DBSelSQL = "USE $DBName;";
 	
@@ -181,21 +182,23 @@
             }
             
             //Normalise Names
-            $firstName = $conn->real_escape_string(normaliseName($line[0]));
-            $lastName = $conn->real_escape_string(normaliseName($line[1]));
+            $firstName = normaliseName($line[0]);
+            $lastName = normaliseName($line[1]);
             
             //validate email, and confirm valid line
             if (validateEmail($line[2])){
-                $email = $conn->real_escape_string(strtolower($line[2]));
+                $email = strtolower($line[2]);
             } else {
-                echo "Email Validation Failed at Line $lineCount\n";
+                echo "Email Validation Failed at Line $lineCount, Line not inserted\n";
                 $validLine = false;
             }
             //Check all conditions are met for line insert into DB, then execute query
             if (!$dryRun && !$createTable && $validLine){
-                $sql = "INSERT INTO users VALUES ('$firstName', '$lastName', '$email')";
-                
-                if (!mysqli_query($conn, $sql)) {
+                //Create SQL prepared Statement
+                $sql = $conn->prepare("INSERT INTO users VALUES(?,?,?)");
+                $sql->bind_param("sss",$firstName,$lastName,$email);
+                //Execute prepared statement, inform any errors
+                if (!($sql->execute())){
                     echo "Error inserting line $lineCount " . mysqli_error($conn);
                     echo "\n";
                 }
@@ -239,14 +242,13 @@
     }
     
     function validateEmail($email){
+        $trimEmail = trim($email);
         //Pattern found on http://www.regexlib.com
         $pattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
-        if (preg_match($pattern, $email)){
+        if (preg_match($pattern, $trimEmail)){
             return true;
         } else {
             return false;
         }
     }
-	
-	//TODO:SQL injection attack vulnerable
 ?>
