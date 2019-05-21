@@ -24,7 +24,7 @@
         } elseif($i%5 == 0){
           echo "bar\n";
         } else {
-          echo ("{$i}\n");
+          echo ("$i\n");
         }
       }
 ?>

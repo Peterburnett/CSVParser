@@ -12,6 +12,11 @@
   location of PHP on the system. Changing the first line to match the output of
   'which php' will regain this functionality.
 
+  The Script authenticates to the MySQL server using the MySQL native password method
+  which is not the default authentication method on newer versions of MySQL server,
+  usey may need to configure authentication method in MySQL server if authentication
+  fails.
+
 =============================Errors============================================
   The Script continues past any errors it can recover from, however some
   exceptions require the script to stop running. The console will detail any
@@ -35,6 +40,9 @@
   functions will be executed, but the database won't be altered.
   --help – this function displays a help message with all of the available parameters
   -u – Required. MySQL username
-  -p – MySQL password, defaults to blank if not supplied
+  -p – MySQL password, defaults to blank if not supplied. Syntax must not have spaces
+       Or they will be treated as part of the parameter, DO: -ptestpassword NOT -p testpassword
   -h – Required. MySQL host
-  -d – MySQL Database name to create table in, defaults to 'TestUsers' if not supplied\n";
+  -d – MySQL Database name to create table in, defaults to 'TestUsers' if not supplied. 
+       Syntax must not have spaces or they will be treated as part of the parameter
+       DO: -dTestDB NOT -dTestDB
