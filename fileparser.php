@@ -4,7 +4,7 @@
 	//Construct the input string for the short options
 	$shortOptions = "";
 	$shortOptions .= "u:";
-	$shortOptions .= "p:";
+	$shortOptions .= "p::";
 	$shortOptions .= "h:";
 	
 	//Construct the input string for the long options
@@ -35,8 +35,8 @@
 	if (isset($options["p"])){
 		$pw = $options["p"];
 	}	else {
-		echo "No Password supplied for DB, Exiting\n";
-		exit(1);
+		echo "No Password supplied for DB, blank password used";
+		$pw = "";
 	}
 	
 	if (isset($options["h"])){
@@ -48,7 +48,7 @@
 	
 	//Long Option Validation
 	if (isset($options["file"])){
-		$filepath = $options["h"];
+		$filepath = $options["file"];
 	}	else {
 		echo "No FilePath supplied for CSV, Exiting\n";
 		exit(1);
@@ -66,5 +66,24 @@
 		$dryRun = false;
 	}
 	
-	echo $user, $pw, $host;
+	//Create connection to DB using supplied credentials, output success or error
+	$conn = new mysqli($host, $user, $pw);
+	if ($conn->connect_error) {
+	    die("Connection failed: " . $conn->connect_error);
+	}
+	echo "Connected successfully\n";
+	
+	//Read in the CSV
+	try{
+	    $file = fopen($filepath, "r");
+	} catch (Exception $e){
+	    echo 'Caught exception: ',  $e->getMessage(), "\n";
+	    exit(2);
+	}
+	
+	//Create table in the DB called users
+	
+	
+	
+	
 ?>
