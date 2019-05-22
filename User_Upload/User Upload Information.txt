@@ -15,7 +15,8 @@
   The Script authenticates to the MySQL server using the MySQL native password method
   which is not the default authentication method on newer versions of MySQL server,
   usey may need to configure authentication method in MySQL server if authentication
-  fails.
+  fails. Additionally, if you are having errors authenticating to the MySQL server
+  using the script, run the script as Superuser.
 
 =============================Errors============================================
   The Script continues past any errors it can recover from, however some

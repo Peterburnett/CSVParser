@@ -104,7 +104,7 @@
 	}
 	
 	//Create DB for data if it doesn't already exist on the server
-	
+	$DBName = $conn->real_escape_string($DBName);
 	$DBCreateSQL = "CREATE DATABASE IF NOT EXISTS $DBName;";
 	$DBSelSQL = "USE $DBName;";
 	
