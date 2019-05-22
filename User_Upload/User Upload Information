@@ -45,4 +45,4 @@
   -h – Required. MySQL host
   -d – MySQL Database name to create table in, defaults to 'TestUsers' if not supplied. 
        Syntax must not have spaces or they will be treated as part of the parameter
-       DO: -dTestDB NOT -dTestDB
+       DO: -dTestDB NOT -d TestDB
