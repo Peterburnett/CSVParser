@@ -248,7 +248,7 @@
         
         $norm = implode('', $normalized);
         //Strip Special Chars from name
-        return trim(preg_replace("/[^a-zA-Z ]/", "", $norm));
+        return trim(preg_replace("/[^a-zA-Z '-]/", "", $norm));
     }
     
     function validateEmail($email){
