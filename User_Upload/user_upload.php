@@ -210,7 +210,7 @@
                 } else {
                     echo "Line: $firstName | $lastName | $email Successfully inserted\n";
                 }
-            } else if  ($dryRun && $validLine){
+            } else if  ($dryRun && $validLine && $lineCount > 0){
                 echo "Line: $firstName | $lastName | $email Ready to insert\n";
             }
             $lineCount++;
