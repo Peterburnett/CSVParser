@@ -45,7 +45,7 @@
 	if (isset($options["p"])){
 		$pw = $options["p"];
 	}	else {
-		echo "No Password supplied for DB, blank password used";
+		echo "No Password supplied for DB, blank password used\n";
 		$pw = "";
 	}
 	
@@ -105,11 +105,12 @@
 	
 	//Create DB for data if it doesn't already exist on the server
 	$DBName = $conn->real_escape_string($DBName);
-	$DBCreateSQL = "CREATE DATABASE IF NOT EXISTS $DBName;";
-	$DBSelSQL = "USE $DBName;";
+	$DBCreateSQL = "CREATE DATABASE IF NOT EXISTS $DBName";
+	$DBSelSQL = "USE $DBName";
 	
 	if (!mysqli_query($conn, $DBCreateSQL)) {
 	    echo "Error creating DB: " . mysqli_error($conn);
+	    echo "\nExiting\n";
 	    exit(3);
 	}
 	
@@ -117,6 +118,7 @@
 	    echo "DB successfully selected\n";
 	} else {
 	    echo "Error Selecting DB: " . mysqli_error($conn);
+	    echo "\nExiting\n";
 	    exit(3);
 	}
 //===================END DATABASE CONNECTION AND DATA IMPORT=======================================
@@ -142,12 +144,13 @@
         //if firstline, construct table from headers, only if not a dry-run
         if (($lineCount == 0) && !$dryRun){
             //Drop any existing users table
-            $usersDropSQL = "DROP TABLE IF EXISTS users;";
+            $usersDropSQL = "DROP TABLE IF EXISTS users";
             
             if (mysqli_query($conn, $usersDropSQL)) {
                 echo "Old users dropped successfully\n";
             } else {
                 echo "Error dropping old Users table: " . mysqli_error($conn);
+                echo "\nExiting\n";
                 exit(3);
             }
             
@@ -167,6 +170,7 @@
                 echo "Table users created successfully\n";
             } else {
                 echo "Error creating table: " . mysqli_error($conn);
+                echo "\nExiting\n";
                 exit(3);
             }
             //Finally increment linecount
@@ -176,6 +180,7 @@
             //Every other line except 0, if we aren't only creating table
             $validLine = true;
             $email = "";
+            
             //Before checking if valid line, check for primary key presence, indicating EOF
             if ($line[2]== ""){
                 break;
@@ -186,11 +191,12 @@
             $lastName = normaliseName($line[1]);
             
             //validate email, and confirm valid line
-            if (validateEmail($line[2])){
+            if ($lineCount > 0){
                 $email = strtolower($line[2]);
-            } else {
-                echo "Email Validation Failed at Line $lineCount, Line not inserted\n";
-                $validLine = false;
+                if (!validateEmail($email)){
+                    echo "Email Validation Failed at Line $lineCount, Line not inserted - $email is not a valid email address\n";
+                    $validLine = false;
+                }
             }
             //Check all conditions are met for line insert into DB, then execute query
             if (!$dryRun && !$createTable && $validLine){
@@ -201,7 +207,11 @@
                 if (!($sql->execute())){
                     echo "Error inserting line $lineCount " . mysqli_error($conn);
                     echo "\n";
+                } else {
+                    echo "Line: $firstName | $lastName | $email Successfully inserted\n";
                 }
+            } else if  ($dryRun && $validLine){
+                echo "Line: $firstName | $lastName | $email Ready to insert\n";
             }
             $lineCount++;
         }
@@ -238,14 +248,12 @@
         
         $norm = implode('', $normalized);
         //Strip Special Chars from name
-        return preg_replace("/^[a-z -']+$/", "", $norm);
+        return trim(preg_replace("/[^a-zA-Z ]/", "", $norm));
     }
     
     function validateEmail($email){
         $trimEmail = trim($email);
-        //Pattern found on http://www.regexlib.com
-        $pattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
-        if (preg_match($pattern, $trimEmail)){
+        if(filter_var($trimEmail, FILTER_VALIDATE_EMAIL)){
             return true;
         } else {
             return false;
